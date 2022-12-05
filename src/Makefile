@@ -13,7 +13,7 @@ piecewise: ${PIECEWISE_DIR}
 
 tage:
 
-predict:  predict.cc trace.cc ${PIECEWISE_DIR}/piecewise_predictor.cc ${TAGE_DIR}/TAGEPredictor.cc predictor.h branch.h trace.h ${PIECEWISE_DIR}/piecewise_predictor.h ${TAGE_DIR}/TAGEPredictor.h
+predict:  predict.cc trace.cc ${PIECEWISE_DIR}/piecewise_predictor.cc ${TAGE_DIR}/TAGEPredictor.cc predictor.h branch.h trace.h ${PIECEWISE_DIR}/piecewise_predictor.h ${TAGE_DIR}/TAGEPredictor.h my_predictor.h
 	$(CXX) $(CXXFLAGS) -o predict predict.cc trace.cc ${PIECEWISE_DIR}/piecewise_predictor.cc ${TAGE_DIR}/TAGEPredictor.cc
 
 test: predict
