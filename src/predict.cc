@@ -4,14 +4,21 @@
 // simulation by reading the trace file and feeding the traces one at a time
 // to the branch predictor.
 
+/**
+ * @file predict.cc
+ * @author Furkan Sahin, Reid O'Boyle, Satya Sreenadh Meesala
+ * @brief This hybrid predictor initializes two predictors, piecewise
+          and TAGE, and decides on a prediction from one of them
+ * @version 0.1
+ *
+ */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> // in case you want to use e.g. memset
 
-#include "branch.h"
-#include "my_predictor.h"
-#include "predictor.h"
+#include "./predictors/piecewise/piecewise_predictor.h" // piecewise predictor
 #include "trace.h"
 
 extern long long int trace_instructions, trace_branches;
@@ -41,7 +48,8 @@ int main(int argc, char *argv[]) {
 
   // initialize competitor's branch prediction code
 
-  branch_predictor *p = new my_predictor();
+  // branch_predictor *p = new my_predictor();
+  branch_predictor *p = new piecewise_predictor();
 
   // some statistics to keep, currently just for conditional branches
 
