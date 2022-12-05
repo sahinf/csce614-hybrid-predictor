@@ -1,7 +1,6 @@
 // source
 // https://github.com/boubinjg/BranchPrediction
 
-// #include "predictor.h"
 #include "TAGEPredictor.h"
 #include <bitset>
 #include <cstdlib>

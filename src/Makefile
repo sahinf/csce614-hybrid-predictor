@@ -13,8 +13,8 @@ piecewise: ${PIECEWISE_DIR}
 
 tage:
 
-predict: piecewise predict.cc trace.cc predictor.h branch.h trace.h 
-	$(CXX) $(CXXFLAGS) -o predict predict.cc trace.cc
+predict:  predict.cc trace.cc ${PIECEWISE_DIR}/piecewise_predictor.cc ${TAGE_DIR}/TAGEPredictor.cc predictor.h branch.h trace.h ${PIECEWISE_DIR}/piecewise_predictor.h ${TAGE_DIR}/TAGEPredictor.h
+	$(CXX) $(CXXFLAGS) -o predict predict.cc trace.cc ${PIECEWISE_DIR}/piecewise_predictor.cc ${TAGE_DIR}/TAGEPredictor.cc
 
 test: predict
 	./predict ${TRACE_DIR}/164.gzip/gzip.trace.bz2
