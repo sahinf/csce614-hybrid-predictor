@@ -22,18 +22,18 @@
 #include "predictors/tage/TAGEPredictor.h"
 #include "saturated_counter.h"
 
-// Global saturated counter for choosing
-using sat_t = int;
-sat_t constexpr SAT_RANGE = 128;
+#define SAT_RANGE 128
 
 class my_update : public branch_update {
   public:
    unsigned int index;
-   saturated_counter<sat_t> tage_counter{SAT_RANGE};
-   saturated_counter<sat_t> pwl_counter{SAT_RANGE};
+   saturated_counter<int> tage_counter;
+   saturated_counter<int> pwl_counter;
+
+	my_update() : branch_update(), tage_counter(SAT_RANGE), pwl_counter(SAT_RANGE) {}
 };
 
-enum class predictor_t { tage, pwl };
+enum predictor_t { tage_e, pwl_e };
 
 class my_predictor : public branch_predictor {
   public:
@@ -44,24 +44,25 @@ class my_predictor : public branch_predictor {
    unsigned int history;
    unsigned char tab[1 << TABLE_BITS];
    unsigned int targets[1 << TABLE_BITS];
-   int tage_or_pwl = 0;  // tage used = 1, pwl used = 0
    predictor_t predictor;
-   PREDICTOR *tage = new PREDICTOR();
-   Piecewise *pwl = new Piecewise();
+	PREDICTOR *tage;
+	Piecewise *pwl;
    my_predictor(void) : history(0) {
       memset(tab, 0, sizeof(tab));
       memset(targets, 0, sizeof(targets));
-      predictor = predictor_t::tage;  // initialize predictor to TAGE
+      predictor = tage_e;  // initialize predictor to TAGE
+	tage = new PREDICTOR();
+	pwl = new Piecewise();
    }
 
    branch_update *predict(branch_info &b) {
       // Run currently selected predictor
       bool prediction = false;
       switch (predictor) {
-         case predictor_t::tage:
+         case tage_e:
             prediction = tage->GetPrediction(b.address);
             break;
-         case predictor_t::pwl:
+         case pwl_e:
             prediction = pwl->predict(b.address);
             break;
          default:
@@ -91,15 +92,15 @@ class my_predictor : public branch_predictor {
 
          my_update *mu = (my_update *)u;
          switch (predictor) {
-            case predictor_t::tage:
+            case tage_e:
                tage->UpdatePredictor(bi.address, taken, u->target_prediction(), target);
                saturate(mu->tage_counter, taken);
-               if (mu->pwl_counter > mu->tage_counter) predictor = predictor_t::pwl;
+               if (mu->pwl_counter > mu->tage_counter) predictor = pwl_e;
                break;
-            case predictor_t::pwl:
+            case pwl_e:
                pwl->update(bi.address, u->direction_prediction(), taken, target);
                saturate(mu->pwl_counter, taken);
-               if (mu->tage_counter > mu->pwl_counter) predictor = predictor_t::tage;
+               if (mu->tage_counter > mu->pwl_counter) predictor = tage_e;
                break;
             default:
                break;
@@ -110,7 +111,7 @@ class my_predictor : public branch_predictor {
       }
    }
 
-   inline void saturate(saturated_counter<sat_t> &sat, bool taken) {
+   inline void saturate(saturated_counter<int> &sat, bool taken) {
       if (taken)
          sat++;
       else

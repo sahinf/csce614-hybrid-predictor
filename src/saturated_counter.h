@@ -5,26 +5,25 @@
  */
 template <typename T>
 class saturated_counter {
-   // meta bookkeeping
-  private:
-   using num_t = T;
-
    // members
   private:
-   num_t _range;
-   num_t _num;
+   T _range;
+   T _num;
 
    // defaults
   public:
-   saturated_counter() = default;
-   saturated_counter(const saturated_counter &) = default;
-   saturated_counter(saturated_counter &&) = default;
-   ~saturated_counter() = default;
+   // saturated_counter() = default;
+   // saturated_counter(const saturated_counter &) = default;
+   // saturated_counter(saturated_counter &&) = default;
+   // ~saturated_counter() = default;
 
   public:
-   explicit saturated_counter(num_t range, num_t num = 0) : _range{range}, _num{num} {}
+   explicit saturated_counter(T range, T num = 0) {
+	_range = range;
+	_num = num;
+   }
 
-   const num_t &num() { return _num; }
+   const T &num() { return _num; }
    // operators
    // postfix
    saturated_counter operator++(int) {
