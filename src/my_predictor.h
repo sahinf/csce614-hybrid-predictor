@@ -30,7 +30,7 @@ class my_update : public branch_update {
    saturated_counter<int> tage_counter;
    saturated_counter<int> pwl_counter;
 
-	my_update() : branch_update(), tage_counter(SAT_RANGE), pwl_counter(SAT_RANGE) {}
+   my_update() : branch_update(), tage_counter(SAT_RANGE), pwl_counter(SAT_RANGE) {}
 };
 
 enum predictor_t { tage_e, pwl_e };
@@ -45,14 +45,14 @@ class my_predictor : public branch_predictor {
    unsigned char tab[1 << TABLE_BITS];
    unsigned int targets[1 << TABLE_BITS];
    predictor_t predictor;
-	PREDICTOR *tage;
-	Piecewise *pwl;
+   PREDICTOR *tage;
+   Piecewise *pwl;
    my_predictor(void) : history(0) {
       memset(tab, 0, sizeof(tab));
       memset(targets, 0, sizeof(targets));
       predictor = tage_e;  // initialize predictor to TAGE
-	tage = new PREDICTOR();
-	pwl = new Piecewise();
+      tage = new PREDICTOR();
+      pwl = new Piecewise();
    }
 
    branch_update *predict(branch_info &b) {
