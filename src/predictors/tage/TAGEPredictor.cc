@@ -146,7 +146,7 @@ PREDICTOR::PREDICTOR(void) {
 /////////////////////////////////////////////////////////////
 
 bool PREDICTOR::GetPrediction(UINT32 PC) {
-
+  choseBasic = false;
   // get bimodal index
   UINT32 bimodalIndex = (PC) % (numBimodalEntries);
 
@@ -205,6 +205,7 @@ bool PREDICTOR::GetPrediction(UINT32 PC) {
       return pred.altPred; // return alt-pred
     }
   } else { // if both missed
+    choseBasic = true;
     pred.altPred = (bimodal[bimodalIndex].pred >
                     BIMODAL_PRED_MAX / 2); // use bimodal table prediction
     return pred.altPred;                   // return alt-pred

@@ -65,6 +65,7 @@ private:
   UINT32 clock;                      // global clock
   bool clockState;                   // clocl flip it
   INT32 altBetterCount; // number of times altpred is better than prd
+  bool choseBasic;
 public:
   // The interface to the four functions below CAN NOT be changed
 
@@ -82,6 +83,7 @@ public:
   UINT32 getIndex(UINT32 PC, int table, UINT32 tagSize, UINT32 phrOffset);
   void initFold(csr_t *shift, UINT32 origLen, UINT32 newLen);
   void fold(csr_t *shift);
+  bool getChoseBasic() {return choseBasic;}
 
   // Contestants can define their own functions below
 };

@@ -1,3 +1,7 @@
+/* Based on the psuedo code from 
+Jimenez, D.A. “Piecewise Linear Branch Prediction.” 32nd International Symposium on Computer Architecture (ISCA'05), 4 June 2005,
+ https://doi.org/10.1109/isca.2005.40.*/
+
 #include "piecewise_predictor.h"
 #include <string.h>
 #include <cmath>
@@ -27,6 +31,7 @@ bool Piecewise::predict(unsigned int address)
 	{
 		predict = 1;
 	}
+	last_output = output;
     return predict;
 }
 
