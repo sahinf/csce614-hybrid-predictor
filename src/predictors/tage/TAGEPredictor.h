@@ -1,3 +1,5 @@
+
+
 #ifndef _PREDICTOR_H_
 #define _PREDICTOR_H_
 
@@ -66,6 +68,10 @@ private:
   bool clockState;                   // clocl flip it
   INT32 altBetterCount; // number of times altpred is better than prd
   bool choseBasic;
+  bool weak;
+  int lastUseful;
+  int highTag;
+  int lowTag;
 public:
   // The interface to the four functions below CAN NOT be changed
 
@@ -84,6 +90,9 @@ public:
   void initFold(csr_t *shift, UINT32 origLen, UINT32 newLen);
   void fold(csr_t *shift);
   bool getChoseBasic() {return choseBasic;}
+  int getLastUseful() {return lastUseful;}
+  int getHighTag() {return highTag;}
+  int getLowTag() {return lowTag;}
 
   // Contestants can define their own functions below
 };

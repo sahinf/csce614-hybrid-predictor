@@ -1,3 +1,5 @@
+
+
 // source
 // https://github.com/boubinjg/BranchPrediction
 
@@ -13,9 +15,9 @@
 #define TAGE_PRED_SIZE 3    // 3 prediction bits for TAGE
 #define BIMODAL_PRED_SIZE 2 // 2 prediction bits for bimodal
 
-#define HIST_1 130 // history for tables high to low
-#define HIST_2 44
-#define HIST_3 15
+#define HIST_1 200 // history for tables high to low
+#define HIST_2 80
+#define HIST_3 20
 #define HIST_4 5
 
 #define BIMODAL_PRED_MAX 3 // maximum bimodal prediction (2 bits)
@@ -147,6 +149,7 @@ PREDICTOR::PREDICTOR(void) {
 
 bool PREDICTOR::GetPrediction(UINT32 PC) {
   choseBasic = false;
+  weak = false;
   // get bimodal index
   UINT32 bimodalIndex = (PC) % (numBimodalEntries);
 
@@ -165,11 +168,17 @@ bool PREDICTOR::GetPrediction(UINT32 PC) {
   pred.altPred = -1;
   pred.table = NUM_TAGE_TABLES;
   pred.altTable = NUM_TAGE_TABLES;
+  choseBasic = true;
+  highTag = 0;
+  lowTag = 0;
+  //lastUseful = tagTables[pred.table][pred.index].u;
 
   for (UINT32 i = 0; i < NUM_TAGE_TABLES; i++) {        // check for tag hits
     if (tagTables[i][tageIndex[i]].tag == tageTag[i]) { // tag hit
       pred.table = i;
       pred.index = tageIndex[i];
+      lastUseful = tagTables[pred.table][pred.index].u;
+      highTag += 1;
       break;
     }
   }
@@ -178,6 +187,8 @@ bool PREDICTOR::GetPrediction(UINT32 PC) {
     if (tagTables[i][tageIndex[i]].tag == tageTag[i]) { // tag hit
       pred.altTable = i;
       pred.altIndex = tageIndex[i];
+      lastUseful = tagTables[pred.table][pred.index].u;
+      lowTag +=1;
       break;
     }
   }
@@ -200,12 +211,12 @@ bool PREDICTOR::GetPrediction(UINT32 PC) {
         (altBetterCount <
          ALTPRED_BET_INIT)) { // altpred historically not useful
       pred.pred = tagTables[pred.table][pred.index].pred >= TAGE_PRED_MAX / 2;
+      lastUseful = tagTables[pred.table][pred.index].u;
       return pred.pred; // return best prediction
     } else {
       return pred.altPred; // return alt-pred
     }
   } else { // if both missed
-    choseBasic = true;
     pred.altPred = (bimodal[bimodalIndex].pred >
                     BIMODAL_PRED_MAX / 2); // use bimodal table prediction
     return pred.altPred;                   // return alt-pred

@@ -19,45 +19,109 @@ public:
 	unsigned int history;
 	unsigned char tab[1<<TABLE_BITS];
 	unsigned int targets[1<<TABLE_BITS];
+	int choiceTable[25000];
+	bitset<20> GHR;
 	int tage_or_pwl = 0; // tage used = 1, pwl used = 0
 	bool equalPredictions = 0;
 	PREDICTOR* tage = new PREDICTOR();
 	Piecewise* pwl = new Piecewise();
+	int tage_miss = 0;
+	int pwl_miss = 0;
+	int tage_preds = 0;
+	int pwl_preds = 0;
 	my_predictor (void) : history(0) { 
 		memset (tab, 0, sizeof (tab));
 		memset (targets, 0, sizeof (targets));
+		GHR = bitset<20>();
+		  // Initialize the choice table.
+	for(UINT32 iii=0; iii < 25000; iii++){
+		choiceTable[iii] = 0;
+	}
 
 	}
 
 	branch_update *predict (branch_info & b) {
 
 		//equalPredictions = 0;
+
+
 		if(b.br_flags & BR_CONDITIONAL)
 		{
+			
 			bool tage_predict= tage->GetPrediction(b.address);
 
 			bool piecewise_predict = pwl->predict(b.address);
+			int piecewise_confidence = pwl->getLastOutput();
 
+
+
+			equalPredictions = 0;
 			if(!(tage_predict ^ piecewise_predict))
 			{
 				//both predicted the same thing dont need to choose
-				u.direction_prediction(piecewise_predict);
-				//equalPredictions = 1;
-				tage_or_pwl = 0;
+				u.direction_prediction(tage_predict);
+				equalPredictions = 1;
+				tage_or_pwl = 1;
 			}
 			else // predictions differ
 			{
-				int piecewise_confidence = pwl->getLastOutput();
+				int tableIdx = b.address % 25000;// HashPC(b.address,16000);
+				if(choiceTable[tableIdx] < 2 or piecewise_confidence < 100)
+				{
+					tage_or_pwl = 1;
+					u.direction_prediction(tage_predict);
+				}
+				else{
+					tage_or_pwl = 0;
+					u.direction_prediction(piecewise_predict);
+				}
+				/*
+				if(1)
+				{
+					tage_or_pwl = 0;
+					u.direction_prediction(piecewise_predict);
+				}
+				else
+				{
+					tage_or_pwl = 1;
+					u.direction_prediction(tage_predict);
+				}*/
+				//tage_or_pwl = 1;
+				//u.direction_prediction(tage_predict);
+			
+				/*
 				if(tage->getChoseBasic())
 				{
-					u.direction_prediction(piecewise_predict);
-					tage_or_pwl = 0;
+					u.direction_prediction(tage_predict);
+					tage_or_pwl = 1;
 				}
+				else if(abs(piecewise_confidence) < 20)
+				{
+					u.direction_prediction(tage_predict);
+					tage_or_pwl = 1;
+				}
+				
 				else{
 					u.direction_prediction(piecewise_predict);
 					tage_or_pwl = 0;
-
 				}
+
+				if(tage_or_pwl) {tage_preds+=1;} else {pwl_preds +=1;}
+
+				if (tage_preds > 100 and pwl_preds > 100)
+				{
+					if(tage_miss/tage_preds > pwl_miss/pwl_preds)
+					{
+						tage_or_pwl = 1;
+						u.direction_prediction(tage_predict);
+					}
+					else
+					{
+						tage_or_pwl = 0;
+						u.direction_prediction(piecewise_predict);
+					}
+				}
+				*/
 				
 			}
 
@@ -77,22 +141,79 @@ public:
 
 	void update (branch_update *u, bool taken, unsigned int target) {
 		if (bi.br_flags & BR_CONDITIONAL) {
-			// we should consider updating both ???
-			/*if(equalPredictions)
+			GHR = (GHR<<1);
+			if(taken) {GHR.set(0,1);} else {GHR.set(0,0);}
+			int tableIdx = bi.address % 25000;//HashPC(bi.address,16000);
+			if((taken != u->direction_prediction()) and choiceTable[tableIdx] < 2)
 			{
-				tage->UpdatePredictor(bi.address,taken,u->target_prediction(),target);
-				pwl->update(bi.address,u->direction_prediction(),taken,target);
+				choiceTable[tableIdx] += 1;
 			}
-			else */if(tage_or_pwl)
+			else if((taken != u->direction_prediction()) and choiceTable[tableIdx] >= 2)
 			{
-				tage->UpdatePredictor(bi.address,taken,u->target_prediction(),target);
+				choiceTable[tableIdx] -= 1;
+			}
+			
+			if(taken == u->direction_prediction() and choiceTable[tableIdx] < 2)
+			{
+				choiceTable[tableIdx] -= 1;
+			}
+			else if (taken == u->direction_prediction() and choiceTable[tableIdx] >= 2)
+			{
+				choiceTable[tableIdx] += 1;
+			}
+			/*if((choiceTable[tableIdx][1] == 0 and u->target_prediction() == taken) or (choiceTable[tableIdx][1] = 1 and taken != u->target_prediction()))
+			{
+				if(choiceTable[tableIdx][1] == 1 && choiceTable[tableIdx][0] == 1){
+					choiceTable[tableIdx].set(0,0);
+				}
+				else if(choiceTable[tableIdx][1] == 1 && choiceTable[tableIdx][0] == 0){
+					choiceTable[tableIdx].set(0,1);
+					choiceTable[tableIdx].set(1,0);
+				}
+				else if(choiceTable[tableIdx][1] == 0 && choiceTable[tableIdx][0] == 1){
+					choiceTable[tableIdx].set(0,0);
+		 		}
 			}
 			else{
+					  if ((choiceTable[tableIdx][1] == 1 && u->target_prediction() == taken) || (choiceTable[tableIdx][1] == 0 && u->target_prediction() != taken)){
+						if(choiceTable[tableIdx][1] == 1 && choiceTable[tableIdx][0] == 0){
+							choiceTable[tableIdx].set(0,1);
+						}
+						else if(choiceTable[tableIdx][1] == 0 && choiceTable[tableIdx][0] == 1){
+							choiceTable[tableIdx].set(1,1);
+							choiceTable[tableIdx].set(0,0);
+						}
+						else if(choiceTable[tableIdx][1] == 0 && choiceTable[tableIdx][0] == 0){
+							choiceTable[tableIdx].set(0,1);
+						}
+					}
+			}*/
+			// we should consider updating both ???
+			if(equalPredictions)
+			{
+				tage->UpdatePredictor(bi.address,taken,u->direction_prediction(),target);
+				pwl->update(bi.address,u->direction_prediction(),taken,target);
+			}
+			else if(tage_or_pwl)
+			{
+				if(taken != u->direction_prediction()) {tage_miss+=1;}
+				tage->UpdatePredictor(bi.address,taken,u->direction_prediction(),target);
+			}
+			else{
+				if(taken != u->direction_prediction()) {pwl_miss +=1;}
 				pwl->update(bi.address,u->direction_prediction(),taken,target);
 			}
 		}
 		if (bi.br_flags & BR_INDIRECT) {
 			targets[bi.address & ((1<<TABLE_BITS)-1)] = target;
 		}
+	}
+	UINT32 HashPC(UINT32 PC, UINT32 hashLimit){
+	
+	// Hash the PC so that it can be used as an index for the perceptron table.
+		
+		UINT32 PCend = PC % hashLimit;
+		UINT32 ghrend = ((UINT32)GHR.to_ulong()) % hashLimit;
+		return PCend ^ ghrend;
 	}
 };
